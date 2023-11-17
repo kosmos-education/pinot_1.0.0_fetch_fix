@@ -22,11 +22,11 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import javax.annotation.Nullable;
 import org.apache.helix.model.InstanceConfig;
 import org.apache.pinot.common.assignment.InstancePartitions;
@@ -50,8 +50,7 @@ public class InstanceTagPoolSelector {
   private final InstancePartitions _existingInstancePartitions;
 
   public InstanceTagPoolSelector(InstanceTagPoolConfig tagPoolConfig, String tableNameWithType,
-      boolean minimizeDataMovement,
-      @Nullable InstancePartitions existingInstancePartitions) {
+      boolean minimizeDataMovement, @Nullable InstancePartitions existingInstancePartitions) {
     _tagPoolConfig = tagPoolConfig;
     _tableNameWithType = tableNameWithType;
     _minimizeDataMovement = minimizeDataMovement;
@@ -124,7 +123,7 @@ public class InstanceTagPoolSelector {
 
         poolsToSelect = new ArrayList<>(numPoolsToSelect);
         if (_minimizeDataMovement && _existingInstancePartitions != null) {
-          Set<Integer> existingPools = new HashSet<>(numPoolsToSelect);
+          Set<Integer> existingPools = new TreeSet<>();
           // Keep the same pool if it's already been used for the table.
           int existingNumPartitions = _existingInstancePartitions.getNumPartitions();
           int existingNumReplicaGroups = _existingInstancePartitions.getNumReplicaGroups();
@@ -135,9 +134,10 @@ public class InstanceTagPoolSelector {
               List<String> existingInstances = _existingInstancePartitions.getInstances(partitionId, replicaGroupId);
               for (String existingInstance : existingInstances) {
                 Integer existingPool = instanceToPoolMap.get(existingInstance);
-                if (existingPool != null & pools.contains(existingPool)) {
-                  poolsToSelect.add(existingPool);
-                  existingPools.add(existingPool);
+                if (existingPool != null) {
+                  if (existingPools.add(existingPool)) {
+                    poolsToSelect.add(existingPool);
+                  }
                   foundExistingPoolForReplicaGroup = true;
                   break;
                 }
